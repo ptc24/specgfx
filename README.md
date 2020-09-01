@@ -7,4 +7,4 @@ missing the modern conveniences of programming languages like Python.
 
 So I wrote a library to produce ZX Spectrum-style text and graphics, for Python.
 
-More details later...
+Documentation is at https://specgfx.readthedocs.io/en/latest/
