@@ -1,3 +1,40 @@
+"""
+ZX-Spectrum style text and graphics for Python. Requires pygame and numpy.
+
+The best way to use this module is:
+
+``from specgfx import *``
+
+To start, run INIT()
+
+Example program:
+
+::
+
+    from specgfx import *
+    INIT()
+    PRINT("Hello world!")
+    PRINT(AT(2,2),"at 2,2 ",INK(1),"blue ",PAPER(5),"on yellow")
+    PRINT(AT(5,2),"at 5,2 ",INVERSE(1),"inverse")
+    name = INPUT(AT(6,0),"What is your name? ")
+    PRINT("Hello, ", name, end="\\n")
+    PRINT("Press any key to exit")
+    while INKEYS() == "": UPDATE()
+    BYE()
+    
+Some notes:
+
+Colours - 0=Black 1=Blue 2=Red 3=Magenta 4=Green 5=Cyan 6=Yellow 7=White
+
+Most of the characters are normal 7-bit ASCII. The pound sign is assinged to code point
+96 - i.e. what is normally a backtick (`````). ASCII 127 (``"\\x7f"``) is a copyright sign.
+ASCII 128-143 (i.e. ``"\\x80"`` to ``"\\x8f"`` - or ``chr(128)`` to ``chr(143)``) are block 
+drawing characters. User Defined Graphics (UDGs) are not currently supported.
+
+Pressing the PAUSE BREAK key will exit from specgfx.
+
+"""
+
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -9,6 +46,14 @@ import sys
 inkeys = ""
 
 def INIT(FULL=False):
+    """
+    Initialise the specgfx system.
+    
+    Args:
+    
+    - FULL - boolean - whether to initialise fullscreen. 
+    """
+    
     global size, width, height, screen, specsurf, defchar, memory, autoupdate, flashframe
     global palette, ipalette, specarray, defcharset
     global flashc, flashrate, clock, cursorx, cursory, showcursor, printstate
@@ -340,32 +385,127 @@ def printchar(ch):
         cursory -= 24
         
 def BORDER(n):
+    """
+    Sets the border colour.
+    
+    Args:
+        
+    - n - integer - the border colour (0-7)
+    """
     global border
-    border = int(n)
+    border = int(n) % 8
     if autoupdate: UPDATE()
        
 def INK(n):
+    """
+    Returns control codes to set the ink colour (0-7).
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT("normal",INK(1),"blue",INK(2),"red")``
+    
+    Args: 
+    
+    - n - integer - the ink colour (0-7)
+    """
     return "".join((chr(16),chr(int(n))))
 
 def PAPER(n):
+    """
+    Returns control codes to set the paper colour (0-7).
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT("normal",PAPER(1),"blue",PAPER(2),"red")``
+    
+    Args: 
+    
+    - n - integer - the paper colour (0-7)
+    """
     return "".join((chr(17),chr(int(n))))
 
 def FLASH(n):
+    """
+    Returns control codes to set or unset flashing text.
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT("normal",FLASH(1),"flashing",FLASH(0),"normal")``
+    
+    Args: 
+    
+    - n - integer - flashing or not (0-1)
+    """
     return "".join((chr(18),chr(int(n))))
 
 def BRIGHT(n):
+    """
+    Returns control codes to set or unset bright text.
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT("normal",BRIGHT(1),"bright",BRIGHT(0),"normal")``
+    
+    Args:
+
+    - n - integer - bright or not (0-1)
+    """
     return "".join((chr(19),chr(int(n))))
 
 def INVERSE(n):
+    """
+    Returns control codes to set or unset inverse video text.
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT("normal",INVERSE(1),"inverse",INVERSE(0),"normal")``
+    
+    Args:
+
+    - n - integer - inverse or not (0-1)
+    """
     return "".join((chr(20),chr(int(n))))
 
 def OVER(n):
+    """
+    Returns control codes to set or unset XOR mode text. This has interesting results when
+    text or graphics is overwritten. Notably, writing text OVER the same text will erase the text.
+    See the ZX Spectrum manual for more details.
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT(AT(0,0),"over and",AT(0,0),OVER(1),"over again we go")``
+    
+    Args:
+
+    - n - integer - XOR mode or not (0-1)
+    """
+
     return "".join((chr(21),chr(int(n))))
     
 def AT(y,x):
+    """
+    Returns control codes to set the coordinates of the text cursor.
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT("normal",AT(5,15),"row 5 column 15",AT(14,4),"row 14 column 4")``
+    
+    Args:
+    
+    -    y - integer - the y coordinate to move to (0-23)
+    -    x - integer - the x coordinate to move to (0-31)
+    """
+
     return "".join((chr(22),chr(int(y)),chr(int(x))))
 
 def TAB(n):
+    """
+    Returns control codes to set the x-coordinate of the text cursor.
+    If this moves the cursor forwards, the cursor stays on the line that it is on.
+    Otherwise, the cursor moves one line downwards.
+    
+    Use this in a PRINT or SET command. Example: 
+    ``PRINT(TAB(0),"tab 0",TAB(16),"halfway along",TAB(8),"quarter way on the next line")``
+    
+    Args:
+
+    - n - integer - the x coordinate to move to (0-31)
+    """
+
     return "".join((chr(23),chr(int(n))))
     
 def printitem(ss):
@@ -374,6 +514,17 @@ def printitem(ss):
         printchar(c)
     
 def PRINT(*s, sep="", end="", set=False):
+    """
+    Outputs characters to the screen. By default this does not include a newline (use \\\\n),
+    or spaces between the outputs.
+    
+    Args:
+    
+    -    s - things to print.
+    -    sep - same as Python's sep option for print.
+    -    end - same as Python's end option for print.
+    -    set - boolean - whether any changes made with INK, PAPER, BRIGHT, FLASH, INVERSE or OVER are permanent or not.
+    """
     global ink,paper,flash,bright,inverse,over
     if not set: store = (ink,paper,flash,bright,inverse,over)
     first = True
@@ -390,10 +541,24 @@ def PRINT(*s, sep="", end="", set=False):
     if autoupdate: UPDATE()
 
 def SET(*s, **args):
+    """
+    Use this to set ink, paper, inverse etc. for text. This works like PRINT, but all changes to ink
+    etc. are permanent.
+    
+    Args:
+    
+    -    s - things to print.
+    -    sep - same as Python's sep option for print.
+    -    end - same as Python's end option for print.
+    
+    """
     PRINT(*s, set=True)
 
 def CLS():
-    global cursorx, cursory, inverse
+    global cursorx, cursory
+    """
+    Clears the screen, and moves the text cursor to the top left.
+    """
     set_attr()
     memory[0x4000:0x5800] = 0
     memory[0x5800:0x5b00] = attr
@@ -412,9 +577,21 @@ def update():
     clock.tick(60)
 
 def INKEYS():
+    """
+    If one or more keys that produce a character are held down, returns the ASCII character of
+    the most recently held down key. Otherwise, returns "". Equivalent to INKEY$ in ZX Spectrum Basic.
+    """
     return inkeys
 
 def INPUT(*s, **args):
+    """Interactive input - prints a prompt, returns a string. Not so much like the ZX Spectrum INPUT
+    - more like the INPUT on the Amstrad CPC.
+    
+    Args:
+    
+    - s - things to print for the prompt
+    - args - arguments to pass onto PRINT
+    """
     global showcursor
     PRINT(*s, **args)
     #print(s)
@@ -439,7 +616,7 @@ def INPUT(*s, **args):
                     res = res[:-1]
                     printchar(12)
                     continue
-                print(event)
+                #print(event)
                 if event.scancode == 69:
                     BYE()
                 if u == "£": u="`" # character set malarkey
@@ -494,10 +671,41 @@ def plot(x,y,INK=None,PAPER=None,FLASH=None,BRIGHT=None,
         memory[0x5800+cx+32*cy] |= val
         
 def PLOT(x,y,**args):
+    """Moves the graphics cursor to the point (x,y) and plots a pixel. NOTE: graphics coordinates
+    are relative to the top left, so (10,30) is 10 pixels to the right of and 30 below the top left.
+    
+    Args:
+    
+    - x - the x coordinate to move to
+    - y - the y coordinate to move to
+    - INK (0-7)
+    - PAPER (0-7)
+    - BRIGHT (0-1)
+    - FLASH (0-1)
+    - OVER (0-1) - draw in XOR or not
+    - INVERSE (0-1) - erase or not
+    """
     plot(x,y,**args)
     if autoupdate: UPDATE()
 
 def DRAW(dx,dy,**args):
+    """
+    Draws a line from the last graphics point drawn (by PLOT or DRAW). Note that the
+    coordinates are relative from that point, not absolute - ie. they specify the number
+    of pixels to go right or down.
+    
+    Args:
+    
+    - dx - the number of pixels to move right (can be negative)
+    - dy - the number of pixels to move down (can be negative)
+    - INK (0-7)
+    - PAPER (0-7)
+    - BRIGHT (0-1)
+    - FLASH (0-1)
+    - OVER (0-1) - draw in XOR or not
+    - INVERSE (0-1) - erase or not
+    """
+
     x = graphicsx + 0.5
     y = graphicsy + 0.5
     steps = max(abs(dx),abs(dy))
@@ -510,6 +718,10 @@ def DRAW(dx,dy,**args):
         plot(x, y, **args)
 
 def UPDATE():
+    """
+    Updates the display. Note there is no need to call this unless automatic updating has been disabled using
+    MANUALUPDATE.
+    """
     global running, flashframe, inkeys
     update()
     for event in pygame.event.get():
@@ -517,7 +729,7 @@ def UPDATE():
             BYE()
         elif event.type == KEYDOWN:
             u = event.unicode
-            print(event)
+            #print(event)
             if event.scancode == 69:
                 BYE()
             if u == "£": u="`" # character set malarkey
@@ -535,13 +747,20 @@ def UPDATE():
                     inkeys = ""
     
 def AUTOUPDATE():
+    """Enable automatic updating, allowing the effects of all text and graphics operations
+    to be seen immediately. Note that this is the default, and so it is only useful
+    to call this if you have previously called MANUALUPDATE."""
     global autoupdate
     autoupdate = True
     
 def MANUALUPDATE():
+    """Disable automatic updating - all text and graphics operations will only take effect when
+    UPDATE is called. This is useful for speed or smooth animation. To re-enable automatic updating
+    call AUTOUPDATE."""
     global autoupdate
     autoupdate = False
 
 def BYE():
+    """Shut down the display and exit python."""
     pygame.quit()
     sys.exit(0)
