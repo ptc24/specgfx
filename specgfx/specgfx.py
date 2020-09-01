@@ -206,7 +206,7 @@ def INIT(FULL=False):
 
 def set_attr():
     global attr
-    attr = paper if inverse else ink + 8*(ink if inverse else paper) + 64*bright + 128*flash
+    attr = ink + 8*(paper) + 64*bright + 128*flash
 
 def render():
     t = time.time()
@@ -257,7 +257,10 @@ def putchar(ascii,x,y):
     addr = 0x4000+x+32*lowy+256*8*highy
     if over:
         for a in range(8):
-            memory[a*256+addr] ^= defcharset[ascii-32][a]    
+            memory[a*256+addr] ^= defcharset[ascii-32][a]
+    elif inverse:
+        for a in range(8):
+            memory[a*256+addr] = 255 - defcharset[ascii-32][a]        
     else:
         for a in range(8):
             memory[a*256+addr] = defcharset[ascii-32][a]
@@ -391,13 +394,10 @@ def SET(*s, **args):
 
 def CLS():
     global cursorx, cursory, inverse
-    oldinverse = inverse
-    inverse = 0
     set_attr()
     memory[0x4000:0x5800] = 0
     memory[0x5800:0x5b00] = attr
     cursorx, cursory = 0,0
-    inverse = oldinverse
     set_attr()
     if autoupdate: UPDATE()
 
