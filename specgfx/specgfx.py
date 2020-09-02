@@ -5,7 +5,8 @@ The best way to use this module is:
 
 ``from specgfx import *``
 
-To start, run INIT()
+To start, run `INIT()`. If the screen is a little small, try `INIT(SIZEX=2)` or `INIT(SIZEX=3)` to
+double or triple the size. For fullscreen, try `INIT(FULL=True)`.
 
 Example program:
 
@@ -45,13 +46,14 @@ import sys
 
 inkeys = ""
 
-def INIT(FULL=False):
+def INIT(FULL=False, SIZEX=1):
     """
     Initialise the specgfx system.
     
     Args:
     
     - FULL - boolean - whether to initialise fullscreen. 
+    - SIZEX - integer - size multiplier for the output screen.
     """
     
     global size, width, height, screen, specsurf, defchar, memory, autoupdate, flashframe
@@ -59,13 +61,18 @@ def INIT(FULL=False):
     global flashc, flashrate, clock, cursorx, cursory, showcursor, printstate
     global ink, paper, flash, bright, inverse, over, border, keysdown, inkeys, keyd
     global graphicsx, graphicsy
+    global sizex, scaledsurf
 
     graphicsx = 0
     graphicsy = 0
 
     pygame.init()
 
-    size = width, height = 320,240
+    sizex = int(SIZEX)
+    if sizex < 1:
+        sizex = 1
+
+    size = width, height = 320*sizex,240*sizex
 
     if FULL:
         screen = pygame.display.set_mode(size, FULLSCREEN)
@@ -73,6 +80,8 @@ def INIT(FULL=False):
         screen = pygame.display.set_mode(size)
 
     specsurf = pygame.Surface((256, 192))
+    if sizex > 1: scaledsurf = pygame.Surface((256*sizex,192*sizex))
+
 
     defcharset = [
     (0,0,0,0,0,0,0,0),
@@ -293,8 +302,12 @@ def render():
                         specarray[xpos+b,ypos] = _paper
     screen.fill(palette[border])
     pygame.surfarray.blit_array(specsurf, specarray)
-    screen.blit(specsurf, ((320-256)/2,(240-192)/2))
-           
+    if sizex == 1:
+        screen.blit(specsurf, ((width-256)/2,(height-192)/2))
+    else:
+        pygame.transform.scale(specsurf, (256*sizex,192*sizex), scaledsurf)
+        screen.blit(scaledsurf, ((width-256*sizex)/2,(height-192*sizex)/2))
+        
 
 def putchar(ascii,x,y):
     lowy = y % 8
