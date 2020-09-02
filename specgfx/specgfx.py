@@ -568,10 +568,10 @@ def SET(*s, **args):
     PRINT(*s, set=True)
 
 def CLS():
-    global cursorx, cursory
     """
     Clears the screen, and moves the text cursor to the top left.
     """
+    global cursorx, cursory
     set_attr()
     memory[0x4000:0x5800] = 0
     memory[0x5800:0x5b00] = attr
