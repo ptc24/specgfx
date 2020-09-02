@@ -30,7 +30,8 @@ Colours - 0=Black 1=Blue 2=Red 3=Magenta 4=Green 5=Cyan 6=Yellow 7=White
 Most of the characters are normal 7-bit ASCII. The pound sign is assinged to code point
 96 - i.e. what is normally a backtick (`````). ASCII 127 (``"\\x7f"``) is a copyright sign.
 ASCII 128-143 (i.e. ``"\\x80"`` to ``"\\x8f"`` - or ``chr(128)`` to ``chr(143)``) are block 
-drawing characters. User Defined Graphics (UDGs) are not currently supported.
+drawing characters. The characters from 144 to 255 are blank, but can be redefined using the
+`UDG` command, as can all of the other characters.
 
 Pressing the PAUSE BREAK key will exit from specgfx.
 
@@ -57,6 +58,7 @@ def INIT(FULL=False, SIZEX=1):
     """
     
     global size, width, height, screen, specsurf, defchar, memory, autoupdate, flashframe
+    global charset
     global palette, ipalette, specarray, defcharset
     global flashc, flashrate, clock, cursorx, cursory, showcursor, printstate
     global ink, paper, flash, bright, inverse, over, border, keysdown, inkeys, keyd
@@ -81,7 +83,6 @@ def INIT(FULL=False, SIZEX=1):
 
     specsurf = pygame.Surface((256, 192))
     if sizex > 1: scaledsurf = pygame.Surface((256*sizex,192*sizex))
-
 
     defcharset = [
     (0,0,0,0,0,0,0,0),
@@ -198,6 +199,8 @@ def INIT(FULL=False, SIZEX=1):
     (240,240,240,240,255,255,255,255),
     (255,255,255,255,255,255,255,255)
     ]
+    
+    charset = [defcharset[i-32] if i>32 and i-32<len(defcharset) else (0,0,0,0,0,0,0,0) for i in range(256)]
 
     palette = [
         (0,0,0),
@@ -315,13 +318,13 @@ def putchar(ascii,x,y):
     addr = 0x4000+x+32*lowy+256*8*highy
     if over:
         for a in range(8):
-            memory[a*256+addr] ^= defcharset[ascii-32][a]
+            memory[a*256+addr] ^= charset[ascii][a]
     elif inverse:
         for a in range(8):
-            memory[a*256+addr] = 255 - defcharset[ascii-32][a]        
+            memory[a*256+addr] = 255 - charset[ascii][a]        
     else:
         for a in range(8):
-            memory[a*256+addr] = defcharset[ascii-32][a]
+            memory[a*256+addr] = charset[ascii][a]
 
 stated = {
     16: "INK",
@@ -777,3 +780,54 @@ def BYE():
     """Shut down the display and exit python."""
     pygame.quit()
     sys.exit(0)
+
+def UDG(charno, values):
+    """
+    Redefine a character in the character set, in a manner similar to User Defined Graphics (UDG)
+    on the ZX Spectrum.
+    
+    This can be used to redefine already-existing characters, if (for example) you want to use a
+    different font, or sacrifice some or all of the letters, numbers punctuation etc. for more
+    graphics characters. Note also that any characters already drawn to the screen will not
+    be altered by this - if you print an "a", then redefine "a", then print another "a", then
+    the first "a" will be in the old style and the second will be in the new style.
+    
+    Example::
+    
+        UDG(0x90, (0b00000001,
+                   0b00000011,
+                   0b00000111,
+                   0b00001111,
+                   0b00011111,
+                   0b00111111,
+                   0b01111111,
+                   0b11111111))
+        PRINT("\x90")
+    
+    defines a triangle character and assigns it to character number 0x90 (144 in decimal) and prints it.
+    
+    Args:
+    
+    - charno - integer (32-255) - the character to define
+    - values - tuple of 8 integers, 0-255, representing the character.
+    """
+    if len(values) != 8 or [i for i in values if type(i) != int or i < 0 or i > 255]: raise Exception
+    charset[charno] = tuple(values)
+    
+def GETCHARDEF(charno):
+    """
+    Fetches the definition of a character, as a tuple of 8 integers. See UDG for more details.
+    
+    Args:
+    
+    - charno - integer (32-255) - the character to get the definition of.
+    """
+    return charset[charno]
+    
+def RESETCHARS():
+    """
+    Resets the character set to its original state. Undoes the effects of UDG.
+    """
+    for i in range(256):
+        charset[i] = defcharset[i-32] if i>32 and i-32<len(defcharset) else (0,0,0,0,0,0,0,0)
+
