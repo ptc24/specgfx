@@ -27,7 +27,7 @@ Some notes:
 
 Colours - 0=Black 1=Blue 2=Red 3=Magenta 4=Green 5=Cyan 6=Yellow 7=White
 
-Most of the characters are normal 7-bit ASCII. The pound sign is assinged to code point
+Most of the characters are normal 7-bit ASCII. The pound sign is assigned to code point
 96 - i.e. what is normally a backtick (`````). ASCII 127 (``"\\x7f"``) is a copyright sign.
 ASCII 128-143 (i.e. ``"\\x80"`` to ``"\\x8f"`` - or ``chr(128)`` to ``chr(143)``) are block 
 drawing characters. The characters from 144 to 255 are blank, but can be redefined using the
@@ -735,8 +735,14 @@ def DRAW(dx,dy,**args):
 
 def UPDATE():
     """
-    Updates the display. Note there is no need to call this unless automatic updating has been disabled using
-    MANUALUPDATE.
+    Updates the display, INKEYS, and checks for the PAUSE BREAK key and closing the pygame window. 
+
+    There are various reasons for calling this:
+    
+    - If MANUALUPDATE has been called, call this every time you want to show the current graphics state to the user.
+    - In a loop repeatedly calling INKEYS, call this to get INKEYS up to date.
+    - In a delay loop, call this to pause briefly, while updating the display, keeping flashing things flashing, respecting BREAK and the window close button.
+    - When doing a lot of computation (i.e. that takes a significant amount of time), call this occasionally so the system doesn't appear to have hung.    
     """
     global running, flashframe, inkeys
     update()
