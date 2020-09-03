@@ -11,5 +11,10 @@ setup(name="specgfx",
     author_email="peter.corbett@cantab.net",
     url="https://github.com/ptc24/specgfx/",
     packages=["specgfx"],
-    ext_modules = cythonize("specgfx/cyrender.pyx")
+    ext_modules = cythonize("specgfx/cyrender.pyx"),
+    install_requires=[
+        "numpy",
+        "pygame",
+        "cython"
+    ]
     )
