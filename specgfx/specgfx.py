@@ -45,6 +45,8 @@ import numpy as np
 import time
 import sys
 
+from .cyrender import cyrender
+
 inkeys = ""
 
 def INIT(FULL=False, SIZEX=1):
@@ -266,6 +268,18 @@ def set_attr():
     attr = ink + 8*(paper) + 64*bright + 128*flash
 
 def render():
+    t = time.time()
+    cyrender(memory, specarray, np.array(ipalette), flashframe, showcursor, cursorx, cursory)
+    screen.fill(palette[border])
+    pygame.surfarray.blit_array(specsurf, specarray)
+    if sizex == 1:
+        screen.blit(specsurf, ((width-256)/2,(height-192)/2))
+    else:
+        pygame.transform.scale(specsurf, (256*sizex,192*sizex), scaledsurf)
+        screen.blit(scaledsurf, ((width-256*sizex)/2,(height-192*sizex)/2))
+    print(time.time()-t)
+
+def slowrender():
     t = time.time()
     for cx in range(32):
         for cy in range(24):
