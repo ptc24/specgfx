@@ -37,7 +37,7 @@ extensions = [
     'recommonmark'
 ]
 
-autodoc_mock_imports = ["pygame", "numpy"]
+autodoc_mock_imports = ["pygame", "numpy", "specgfx.cyrender"]
 master_doc = "index"
 
 # Add any paths that contain templates here, relative to this directory.
