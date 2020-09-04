@@ -225,17 +225,18 @@ def INIT(FULL=False, SIZEX=1):
 
     running = True
 
-    ipalette = [256*256*i[0]+256*i[1]+i[2] for i in palette]
+    ipalette = np.array([256*256*i[0]+256*i[1]+i[2] for i in palette], dtype=np.int32)
 
     memory = np.zeros((32*1024,),dtype=np.uint8)
     screen.fill(palette[2])
     specsurf.fill(palette[2])
-    specarray = pygame.surfarray.array2d(specsurf)
+    specarray = np.zeros((256,192), dtype=np.int32)
+    #specarray = pygame.surfarray.array2d(specsurf)
 
     autoupdate = True
     flashframe = False
     flashc = 0
-    flashrate = 5
+    flashrate = 25
     clock = pygame.time.Clock()
 
     cursorx = 0
@@ -269,7 +270,7 @@ def set_attr():
 
 def render():
     t = time.time()
-    cyrender(memory, specarray, np.array(ipalette), flashframe, showcursor, cursorx, cursory)
+    cyrender(memory, specarray, ipalette, flashframe, showcursor, cursorx, cursory)
     screen.fill(palette[border])
     pygame.surfarray.blit_array(specsurf, specarray)
     if sizex == 1:
@@ -277,8 +278,9 @@ def render():
     else:
         pygame.transform.scale(specsurf, (256*sizex,192*sizex), scaledsurf)
         screen.blit(scaledsurf, ((width-256*sizex)/2,(height-192*sizex)/2))
-    print(time.time()-t)
+    #print(time.time()-t)
 
+# Old non-Cython render code
 def slowrender():
     t = time.time()
     for cx in range(32):
