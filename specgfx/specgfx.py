@@ -1,5 +1,11 @@
 """
-ZX-Spectrum style text and graphics for Python. Requires pygame and numpy.
+ZX-Spectrum style text and graphics for Python. 
+
+Requires Python 3, pygame and numpy. The easiest way to install is from pip:
+
+``python -m pip install specgfx``
+
+(you may want to try `python3` instead of `python` if that's how your system is set up). 
 
 The best way to use this module is:
 
@@ -9,7 +15,7 @@ To start, run `INIT()`. If the screen is a little small, try `INIT(SIZEX=2)` or 
 double or triple the size. For fullscreen, try `INIT(FULL=True)`.
 
 Example program:
-
+rrrr
 ::
 
     from specgfx import *
