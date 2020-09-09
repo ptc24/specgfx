@@ -15,7 +15,7 @@ To start, run `INIT()`. If the screen is a little small, try `INIT(SIZEX=2)` or 
 double or triple the size. For fullscreen, try `INIT(FULL=True)`.
 
 Example program:
-rrrr
+
 ::
 
     from specgfx import *
@@ -50,6 +50,7 @@ from pygame.locals import *
 import numpy as np
 import time
 import sys
+import math
 
 from .cyrender import cyrender
 
@@ -76,6 +77,7 @@ def INIT(FULL=False, SIZEX=1):
     graphicsx = 0
     graphicsy = 0
 
+    pygame.mixer.pre_init(44100,8,1)
     pygame.init()
 
     sizex = int(SIZEX)
@@ -269,6 +271,7 @@ def INIT(FULL=False, SIZEX=1):
         for j in range(24):
             #memory[0x5800+i+32*j] = (i+32*j)%256
             memory[0x5800+i+32*j] = attr
+            
 
 def set_attr():
     global attr
@@ -666,6 +669,16 @@ def INPUT(*s, **args):
     showcursor = osc
     return res
 
+def MOVE(x,y):
+    """
+    Moves the graphics cursor to x,y.
+    
+    Args:
+    
+    - x - the x coordinate to move to
+    - y - the y coordinate to move to
+    """
+    graphicsx, graphicsy = int(x),int(y)
 
 def plot(x,y,INK=None,PAPER=None,FLASH=None,BRIGHT=None,
     OVER=None,INVERSE=None):
@@ -707,6 +720,30 @@ def plot(x,y,INK=None,PAPER=None,FLASH=None,BRIGHT=None,
             val |= (int(FLASH) % 2)*128
         memory[0x5800+cx+32*cy] &= (255-mask)
         memory[0x5800+cx+32*cy] |= val
+
+def POINT(x,y):
+    """
+    Tests the pixel at x,y, returns 1 if it is the ink colour and 0 if it is the paper colour.
+
+    Args:
+    
+    - x - the x coordinate to test
+    - y - the y coordinate to test
+    """
+    x,y = int(x),int(y)
+    if x < 0: return
+    if x >= 256: return
+    if y < 0: return
+    if y >= 192: return
+    midy = y % 8
+    cy = int(y/8)
+    lowy = cy % 8
+    highy = int(cy/8)
+    cx = int(x/8)
+    xp = x % 8
+    xm = 1 << (7-xp)
+    mp = 0x4000+cx+32*lowy+256*midy+256*8*highy
+    val = 1 if memory[mp] & xm else 0
         
 def PLOT(x,y,**args):
     """Moves the graphics cursor to the point (x,y) and plots a pixel. NOTE: graphics coordinates
@@ -726,16 +763,41 @@ def PLOT(x,y,**args):
     plot(x,y,**args)
     if autoupdate: UPDATE()
 
-def DRAW(dx,dy,**args):
+def DRAWTO(x, y, **args):
+    """
+    Draws a line from the last graphics point drawn (by PLOT or DRAW), to the
+    point specified by x and y. Note that the coordinates are absolute.
+    
+    Args:
+    
+    - x - the x coordinate to draw to
+    - y - the y coordinate to draw to
+    - INK (0-7)
+    - PAPER (0-7)
+    - BRIGHT (0-1)
+    - FLASH (0-1)
+    - OVER (0-1) - draw in XOR or not
+    - INVERSE (0-1) - erase or not
+    """
+    dx = x - graphicsx
+    dy = y - graphicsy
+    return DRAW(dx,dy,**arg)
+
+def DRAW(dx,dy,a=None,**args):
     """
     Draws a line from the last graphics point drawn (by PLOT or DRAW). Note that the
     coordinates are relative from that point, not absolute - ie. they specify the number
     of pixels to go right or down.
     
+    When called with the ``a`` argument, draws an arc from the graphics cursor position, ending dx pixels to the
+    right of and dy pixels below that position. Turns through a radians - to the left if a is positive, to the
+    right if a is negative.
+    
     Args:
     
     - dx - the number of pixels to move right (can be negative)
     - dy - the number of pixels to move down (can be negative)
+    - a - optional - draws an arc the angle to turn through, in radians (can be negative)
     - INK (0-7)
     - PAPER (0-7)
     - BRIGHT (0-1)
@@ -744,16 +806,162 @@ def DRAW(dx,dy,**args):
     - INVERSE (0-1) - erase or not
     """
 
+    if a is not None: return arc(dx, dy, a)
+
     x = graphicsx + 0.5
     y = graphicsy + 0.5
     steps = max(abs(dx),abs(dy))
     if steps < 1: return
     mdx = dx/steps
     mdy = dy/steps
-    for i in range(steps):
+    for i in range(int(steps)):
         x += mdx
         y += mdy
         plot(x, y, **args)
+    if autoupdate: UPDATE()
+
+def arc(dx, dy, a, **args):
+    global graphicsx, graphicsy
+    A = 1/np.tan(a/2)
+    sgx, sgy = graphicsx+dx, graphicsy+dy
+    
+    x = graphicsx + 0.5
+    y = graphicsy + 0.5    
+    cx = x+(A*dy/2)+dx/2
+    cy = y-(A*dx/2)+dy/2
+        
+    r = np.sqrt((x-cx)**2+(y-cy)**2)
+    graphicsx += dx
+    graphicsy += dy
+    
+    t0=math.atan2(x-cx,y-cy)
+    print(cx, cy)
+    print(t0, np.cos(t0), np.sin(t0))
+    
+    if a > 0:
+        p = np.arange(0,a,1/r)+t0
+    else:
+        p = -np.arange(0,-a,1/r)+t0
+
+    xv = (r * np.sin(p)) + cx
+    yv = (r * np.cos(p)) + cy
+    for x, y in zip(xv, yv):
+        plot(x, y, **args)
+
+    graphicsx, graphicsy = sgx, sgy
+        
+    if autoupdate: UPDATE()
+
+def CIRCLE(x, y, r, **args):
+    """Draws a circle.
+    
+    - x - the x coordinate of the circle center
+    - y - the y coordinate of the circle center
+    - r - the radius of the circle, in pixels
+    - INK (0-7)
+    - PAPER (0-7)
+    - BRIGHT (0-1)
+    - FLASH (0-1)
+    - OVER (0-1) - draw in XOR or not
+    - INVERSE (0-1) - erase or not
+    """
+    global graphicsx, graphicsy
+    sgx, sgy = graphicsx, graphicsy
+
+    # These make the circles come out nicer
+    cx=x
+    cy=y
+
+    p = np.arange(0,np.pi*2,1/r)
+
+    xv = (r * np.sin(p)) + cx
+    yv = (r * np.cos(p)) + cy
+    for x, y in zip(xv, yv):
+        plot(x, y, **args)
+
+    graphicsx, graphicsy = sgx, sgy
+
+    if autoupdate: UPDATE()
+        
+        
+
+    
+def ATTR(x,y):
+    """Gets the attribute at a given text position. The attribute is an 8-bit value. The lowest three bits
+    specify the ink colour, the next three bits specify the paper, the next bit specifies brightness,
+    and the highest bit specified flash.
+    
+    Args:
+    
+    - x - integer (0-31) - the column of the attribute to get
+    - y - integer (0-23) - the row of the attribute to get
+    """
+    x = int(x)
+    y = int(y)
+    if x<0 or x>31 or y<0 or y>23: return -1
+    return memory[0x5800+x+(y*32)]
+    
+def SETATTR(x, y, ATTR=None, INK=None, PAPER=None, BRIGHT=None, FLASH=None):
+    """Sets the attribute at a given text position. The attribute is an 8-bit value. The lowest three bits
+    specify the ink colour, the next three bits specify the paper, the next bit specifies brightness,
+    and the highest bit specified flash.
+    
+    Calling this with only x and y will have no effect. Calling this with x, y and ATTR will change the
+    whole attribute. Calling this with x, y, and at least one of INK, PAPER, BRIGHT and FLASH will
+    
+    Args:
+    
+    - x - integer (0-31) - the column of the attribute to set
+    - y - integer (0-23) - the row of the attribute to set
+    - ATTR - integer (0-255) - optional - the new attribute
+    - INK - integer (0-7) - optional - the new ink value
+    - PAPER - integer (0-7) - optional - the new paper value
+    - BRIGHT - integer (0-1) - optional - the new brightness value
+    - FLASH - integer (0-1) - optional - the new flash value
+    """
+    x = int(x)
+    y = int(y)
+    if x<0 or x>31 or y<0 or y>23: return -1
+    mask = 255
+    attr = 0
+    # todo check input
+    if ATTR is not None:
+        attr = attr
+        mask = 0
+    if INK is not None:
+        attr += INK
+        mask &= 0b11111000
+    if PAPER is not None:
+        attr += 8 * PAPER
+        mask &= 0b11000111
+    if BRIGHT is not None:
+        attr += 64 * BRIGHT
+        mask &= 0b10111111
+    if FLASH is not None:
+        attr += 128 * FLASH
+    addr = 0x5800+x+(y*32)
+    memory[addr] = (mask & memory[addr]) | attr
+    
+def SCREENSTR(x,y):
+    """
+    Examines a text position to see what character might be there. Roughly equivalent to SCREEN$ on the ZX Spectrum.
+    Returns a string containing the possible characters, may be empty.
+    
+    This uses the current contents of the character set, from position 32 to 255, and compares them against the
+    pixels on screen. Redefining the character set will affect the results of this function. This function will
+    not be able to detect characters written with INVERSE, or characters with graphics drawn over the top, or with
+    other characters drawn over the top with OVER.
+    
+    Args:
+    
+    - x - integer (0-31) - the column of the character to examine
+    - y - integer (0-23) - the row of the character to examine.
+    """
+    lowy = y % 8
+    highy = int(y/8)
+    addr = 0x4000+x+32*lowy+256*8*highy
+    vals = tuple([memory[a*256+addr] for a in range(8)])
+    return [chr(i) for i in range(32,256) if charset[i] == vals]
 
 def UPDATE():
     """
@@ -789,6 +997,34 @@ def UPDATE():
                     inkeys = keysdown[-1]
                 else:
                     inkeys = ""
+        
+def BEEP(duration, pitch):
+    """Plays a beep. This is pretty crude, and the pitches become more and more approximate the higher they go.
+
+    Args:
+        - duration - float - approximate time in seconds
+        - pitch - float (-60 to 69) - the approximate number of semitones above middle C
+    """
+    if pitch < -60 or pitch > 69: raise Exception
+    freq = 261.625565 * 2 ** (pitch/12)
+    cycles = 44100 / freq
+    clen = int(cycles / 2)
+    snd = pygame.sndarray.make_sound(np.concatenate([np.zeros(clen,dtype=np.uint8),np.ones(clen,dtype=np.uint8)*255]))
+    print(cycles)
+    snd.play(-1)
+    pygame.time.wait(int(duration*1000))    
+    snd.stop()
+        
+def PAUSE(frames):
+    """Pauses for a specified number of frames, while updating the screen. If specgfx is running well, it runs at 60
+    frames a second.
+    
+    Args:
+    
+    - frames - integer - the number of frames to wait for.
+    """
+    for frame in range(frames):
+        UPDATE()
     
 def AUTOUPDATE():
     """Enable automatic updating, allowing the effects of all text and graphics operations
@@ -859,3 +1095,36 @@ def RESETCHARS():
     for i in range(256):
         charset[i] = defcharset[i-32] if i>32 and i-32<len(defcharset) else (0,0,0,0,0,0,0,0)
 
+def GETMEMORY():
+    """
+    Advanced: Gets the screen memory, as a numpy array. This is a 32k array of unsigned 8-bit
+    integers (mimicing the address space of a 16k ZX Spectrum, with the first 16k representing ROM),
+    and is mostly zeros. The screen memory is laid out as in a ZX Spectrum, with
+    the pixels starting at 0x4000 and the attributes starting at 0x5800, ending at 0x5aff
+    
+    This gets the actual array that specgfx works with - changing values in this array (between
+    0x4000 and 0x5aff) will change the screen once you call UPDATE.
+    """
+    return memory
+
+def PEEK(address):
+    """
+    Reads a byte in the screen memory, at the given address.
+    
+    Args:
+    
+    - address - integer, from 0 to 0x7fff, but only values from 0x4000 to 0x5800 are of interest.
+    """
+    return memory[address]
+    
+def POKE(address, value):
+    """
+    Writes a byte to the screen memory, at the given address. Writing between 0x4000 and 0x5aff will
+    change the screen once you call UPDATE.
+    
+    Args:
+    
+    - address - integer, from 0 to 0x7fff, but only values from 0x4000 to 0x5800 are of interest.
+    - value - integer - the byte to write.
+    """
+    memory[address] = value
