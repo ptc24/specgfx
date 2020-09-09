@@ -5,7 +5,7 @@ from Cython.Build import cythonize
 
 
 setup(name="specgfx",
-    version="0.0.1dev2",
+    version="0.0.1dev3",
     description="ZX spectrum inspired text and graphics",
     author="Peter Corbett",
     author_email="peter.corbett@cantab.net",
