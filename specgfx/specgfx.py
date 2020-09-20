@@ -1,46 +1,7 @@
 """
-ZX-Spectrum style text and graphics for Python. 
-
-Requires Python 3, pygame and numpy. The easiest way to install is from pip:
-
-``python -m pip install specgfx``
-
-(you may want to try `python3` instead of `python` if that's how your system is set up). 
-
-The best way to use this module is:
-
-``from specgfx import *``
-
-To start, run `INIT()`. If the screen is a little small, try `INIT(SIZEX=2)` or `INIT(SIZEX=3)` to
-double or triple the size. For fullscreen, try `INIT(FULL=True)`.
-
-Example program:
-
-::
+The main module. Import with::
 
     from specgfx import *
-    INIT()
-    PRINT("Hello world!")
-    PRINT(AT(2,2),"at 2,2 ",INK(1),"blue ",PAPER(5),"on yellow")
-    PRINT(AT(5,2),"at 5,2 ",INVERSE(1),"inverse")
-    name = INPUT(AT(6,0),"What is your name? ")
-    PRINT("Hello, ", name, end="\\n")
-    PRINT("Press any key to exit")
-    while INKEYS() == "": UPDATE()
-    BYE()
-    
-Some notes:
-
-Colours - 0=Black 1=Blue 2=Red 3=Magenta 4=Green 5=Cyan 6=Yellow 7=White
-
-Most of the characters are normal 7-bit ASCII. The pound sign is assigned to code point
-96 - i.e. what is normally a backtick (`````). ASCII 127 (``"\\x7f"``) is a copyright sign.
-ASCII 128-143 (i.e. ``"\\x80"`` to ``"\\x8f"`` - or ``chr(128)`` to ``chr(143)``) are block 
-drawing characters. The characters from 144 to 255 are blank, but can be redefined using the
-`UDG` command, as can all of the other characters.
-
-Pressing the PAUSE BREAK key will exit from specgfx.
-
 """
 
 import os
@@ -335,7 +296,36 @@ def slowrender():
     else:
         pygame.transform.scale(specsurf, (256*sizex,192*sizex), scaledsurf)
         screen.blit(scaledsurf, ((width-256*sizex)/2,(height-192*sizex)/2))
-        
+
+def scrollup():
+    global cursory
+    cursory -= 1
+    if cursory < 0: cursory = 0
+    for cy in range(0,23):
+        ncy = cy + 1
+        lowy = cy % 8
+        nlowy = ncy % 8
+        highy = int(cy/8)
+        nhighy = int(ncy/8)
+        baddr = 0x4000 + 32*lowy + 2048*highy
+        nbaddr = 0x4000 + 32*nlowy + 2048*nhighy
+        for midyv in range(0,2048,256):
+            addr = baddr+midyv
+            naddr = nbaddr+midyv
+            memory[addr:addr+32] = memory[naddr:naddr+32]
+        memory[0x5800+32*cy:0x5800+32*cy+32] = memory[0x5800+32*cy+32:0x5800+32*cy+64]
+    for midyv in range(0,2048,256):
+        #hex(0x4000 + 32*7 + 2048*2) = 0x50e0  
+            memory[0x50e0+midyv:0x5100+midyv] = 0
+    set_attr()
+    memory[0x5800+32*23:0x5800+32*24] = attr
+
+def SCROLLUP():
+    """
+    Scrolls the screen upwards by one character cell - i.e. 8 pixels.
+    """
+    scrollup()
+    if autoupdate: UPDATE()
 
 def putchar(ascii,x,y):
     lowy = y % 8
@@ -423,7 +413,8 @@ def printchar(ch):
         cursorx -= 32
         cursory += 1
     while cursory >= 24:
-        cursory -= 24
+        scrollup()
+        #cursory -= 24
         
 def BORDER(n):
     """
@@ -441,7 +432,7 @@ def INK(n):
     """
     Returns control codes to set the ink colour (0-7).
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT("normal",INK(1),"blue",INK(2),"red")``
     
     Args: 
@@ -454,7 +445,7 @@ def PAPER(n):
     """
     Returns control codes to set the paper colour (0-7).
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT("normal",PAPER(1),"blue",PAPER(2),"red")``
     
     Args: 
@@ -467,7 +458,7 @@ def FLASH(n):
     """
     Returns control codes to set or unset flashing text.
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT("normal",FLASH(1),"flashing",FLASH(0),"normal")``
     
     Args: 
@@ -480,7 +471,7 @@ def BRIGHT(n):
     """
     Returns control codes to set or unset bright text.
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT("normal",BRIGHT(1),"bright",BRIGHT(0),"normal")``
     
     Args:
@@ -493,7 +484,7 @@ def INVERSE(n):
     """
     Returns control codes to set or unset inverse video text.
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT("normal",INVERSE(1),"inverse",INVERSE(0),"normal")``
     
     Args:
@@ -508,7 +499,7 @@ def OVER(n):
     text or graphics is overwritten. Notably, writing text OVER the same text will erase the text.
     See the ZX Spectrum manual for more details.
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT(AT(0,0),"over and",AT(0,0),OVER(1),"over again we go")``
     
     Args:
@@ -522,7 +513,7 @@ def AT(y,x):
     """
     Returns control codes to set the coordinates of the text cursor.
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT("normal",AT(5,15),"row 5 column 15",AT(14,4),"row 14 column 4")``
     
     Args:
@@ -539,7 +530,7 @@ def TAB(n):
     If this moves the cursor forwards, the cursor stays on the line that it is on.
     Otherwise, the cursor moves one line downwards.
     
-    Use this in a PRINT or SET command. Example: 
+    Use this in a ``PRINT`` or ``SET`` command. Example: 
     ``PRINT(TAB(0),"tab 0",TAB(16),"halfway along",TAB(8),"quarter way on the next line")``
     
     Args:
@@ -554,7 +545,7 @@ def printitem(ss):
     for c in ss:
         printchar(c)
     
-def PRINT(*s, sep="", end="", set=False):
+def PRINT(*s, sep="", end="\n", set=False):
     """
     Outputs characters to the screen. By default this does not include a newline (use \\\\n),
     or spaces between the outputs.
@@ -581,9 +572,9 @@ def PRINT(*s, sep="", end="", set=False):
         set_attr()
     if autoupdate: UPDATE()
 
-def SET(*s, **args):
+def SET(*s, sep="", end=""):
     """
-    Use this to set ink, paper, inverse etc. for text. This works like PRINT, but all changes to ink
+    Use this to set ink, paper, inverse etc. for text. This works like ``PRINT``, but all changes to ink
     etc. are permanent.
     
     Args:
@@ -617,6 +608,19 @@ def update():
     pygame.display.flip()
     clock.tick(60)
 
+def GETKEY():
+    """
+    Waits for a keypress, and returns the ASCII character of the key pressed.
+    """
+    # wait for no key to be pressed 
+    while inkeys:
+        UPDATE()
+    # then wait for a key
+    while not inkeys:
+        UPDATE()
+    return inkeys
+       
+
 def INKEYS():
     """
     If one or more keys that produce a character are held down, returns the ASCII character of
@@ -624,7 +628,7 @@ def INKEYS():
     """
     return inkeys
 
-def INPUT(*s, **args):
+def INPUT(*s, end="", **args):
     """Interactive input - prints a prompt, returns a string. Not so much like the ZX Spectrum INPUT
     - more like the INPUT on the Amstrad CPC.
     
@@ -633,7 +637,8 @@ def INPUT(*s, **args):
     - s - things to print for the prompt
     - args - arguments to pass onto PRINT
     """
-    global showcursor
+    global showcursor, keysdown, inkeys
+    args["end"] = end
     PRINT(*s, **args)
     #print(s)
     scx, scy = cursorx, cursory
@@ -658,7 +663,7 @@ def INPUT(*s, **args):
                     printchar(12)
                     continue
                 #print(event)
-                if event.scancode == 69:
+                if event.scancode == 69 or event.scancode == 1: # PAUSE/BREAK and ESC
                     BYE()
                 if u == "£": u="`" # character set malarkey
                 if u and (ord(u) < 32 or ord(u) > 127): u=""
@@ -667,6 +672,8 @@ def INPUT(*s, **args):
                     printchar(u)
     pygame.key.set_repeat(0)
     showcursor = osc
+    keysdown = []
+    inkeys = ""
     return res
 
 def MOVE(x,y):
@@ -678,9 +685,10 @@ def MOVE(x,y):
     - x - the x coordinate to move to
     - y - the y coordinate to move to
     """
+    global graphicsx, graphicsy
     graphicsx, graphicsy = int(x),int(y)
 
-def plot(x,y,INK=None,PAPER=None,FLASH=None,BRIGHT=None,
+def plot(x,y,INK=None,
     OVER=None,INVERSE=None):
     global graphicsx, graphicsy
     x,y = int(x),int(y)
@@ -697,29 +705,20 @@ def plot(x,y,INK=None,PAPER=None,FLASH=None,BRIGHT=None,
     xp = x % 8
     xm = 1 << (7-xp)
     mp = 0x4000+cx+32*lowy+256*midy+256*8*highy
-    if OVER:
+    if OVER or (OVER is None and over):
         memory[mp] ^= xm
-    elif INVERSE:
-        memory[mp] &= (1-xm)
+    elif INVERSE or (INVERSE is None and inverse):
+        memory[mp] &= (255-xm)
     else:
         memory[mp] |= xm
-    if INK is not None or PAPER is not None or FLASH is not None or BRIGHT is not None:
-        mask = 0
-        val = 0
-        if INK is not None:
-            mask |= 7
-            val |= int(INK) % 8
-        if PAPER is not None:
-            mask |= 56 # 8+16+32
-            val |= (int(PAPER) % 8)*8 
-        if BRIGHT is not None:
-            mask |= 64
-            val |= (int(BRIGHT) % 2)*64
-        if FLASH is not None:
-            mask |= 128
-            val |= (int(FLASH) % 2)*128
-        memory[0x5800+cx+32*cy] &= (255-mask)
-        memory[0x5800+cx+32*cy] |= val
+    mask = 7
+    val = 0
+    if INK is None:
+        val = int(ink)
+    else:
+        val = int(INK)
+    memory[0x5800+cx+32*cy] &= (255-mask)
+    memory[0x5800+cx+32*cy] |= val
 
 def POINT(x,y):
     """
@@ -744,6 +743,7 @@ def POINT(x,y):
     xm = 1 << (7-xp)
     mp = 0x4000+cx+32*lowy+256*midy+256*8*highy
     val = 1 if memory[mp] & xm else 0
+    return val
         
 def PLOT(x,y,**args):
     """Moves the graphics cursor to the point (x,y) and plots a pixel. NOTE: graphics coordinates
@@ -753,35 +753,30 @@ def PLOT(x,y,**args):
     
     - x - the x coordinate to move to
     - y - the y coordinate to move to
-    - INK (0-7)
-    - PAPER (0-7)
-    - BRIGHT (0-1)
-    - FLASH (0-1)
+    - INK (0-7) - the colour to plot in
     - OVER (0-1) - draw in XOR or not
     - INVERSE (0-1) - erase or not
     """
     plot(x,y,**args)
     if autoupdate: UPDATE()
 
-def DRAWTO(x, y, **args):
+def DRAWTO(x,y,a=None,**args):
     """
-    Draws a line from the last graphics point drawn (by PLOT or DRAW), to the
+    Draws a line from the last graphics point drawn (by ``PLOT`` or ``DRAW``), to the
     point specified by x and y. Note that the coordinates are absolute.
     
     Args:
     
     - x - the x coordinate to draw to
     - y - the y coordinate to draw to
-    - INK (0-7)
-    - PAPER (0-7)
-    - BRIGHT (0-1)
-    - FLASH (0-1)
+    - a - optional - draws an arc the angle to turn through, in radians (can be negative)
+    - INK (0-7) - the colour to draw in
     - OVER (0-1) - draw in XOR or not
     - INVERSE (0-1) - erase or not
     """
     dx = x - graphicsx
     dy = y - graphicsy
-    return DRAW(dx,dy,**arg)
+    return DRAW(dx,dy,a,**args)
 
 def DRAW(dx,dy,a=None,**args):
     """
@@ -798,15 +793,12 @@ def DRAW(dx,dy,a=None,**args):
     - dx - the number of pixels to move right (can be negative)
     - dy - the number of pixels to move down (can be negative)
     - a - optional - draws an arc the angle to turn through, in radians (can be negative)
-    - INK (0-7)
-    - PAPER (0-7)
-    - BRIGHT (0-1)
-    - FLASH (0-1)
+    - INK (0-7) - the colour to draw in
     - OVER (0-1) - draw in XOR or not
     - INVERSE (0-1) - erase or not
     """
 
-    if a is not None: return arc(dx, dy, a)
+    if a is not None and abs(a) > 1e-4: return arc(dx, dy, a)
 
     x = graphicsx + 0.5
     y = graphicsy + 0.5
@@ -835,8 +827,6 @@ def arc(dx, dy, a, **args):
     graphicsy += dy
     
     t0=math.atan2(x-cx,y-cy)
-    print(cx, cy)
-    print(t0, np.cos(t0), np.sin(t0))
     
     if a > 0:
         p = np.arange(0,a,1/r)+t0
@@ -926,21 +916,25 @@ def SETATTR(x, y, ATTR=None, INK=None, PAPER=None, BRIGHT=None, FLASH=None):
     attr = 0
     # todo check input
     if ATTR is not None:
-        attr = attr
+        attr = int(ATTR) % 256
         mask = 0
-    if INK is not None:
-        attr += INK
-        mask &= 0b11111000
-    if PAPER is not None:
-        attr += 8 * PAPER
-        mask &= 0b11000111
-    if BRIGHT is not None:
-        attr += 64 * BRIGHT
-        mask &= 0b10111111
-    if FLASH is not None:
-        attr += 128 * FLASH
+    else:
+        if INK is not None:
+            attr += int(INK) % 8
+            mask &= 0b11111000
+        if PAPER is not None:
+            attr += 8 * (int(PAPER) % 8)
+            mask &= 0b11000111
+        if BRIGHT is not None:
+            attr += 64 * (int(BRIGHT) % 2)
+            mask &= 0b10111111
+        if FLASH is not None:
+            attr += 128 * (int(FLASH) % 2)
+            mask &= 0b01111111
     addr = 0x5800+x+(y*32)
+    #print(hex(addr), mask, attr, memory[addr], mask & memory[addr], (mask & memory[addr]) | attr)
     memory[addr] = (mask & memory[addr]) | attr
+    if autoupdate: UPDATE()
     
 def SCREENSTR(x,y):
     """
@@ -965,7 +959,7 @@ def SCREENSTR(x,y):
 
 def UPDATE():
     """
-    Updates the display, INKEYS, and checks for the PAUSE BREAK key and closing the pygame window. 
+    Updates the display, INKEYS, and checks for the PAUSE BREAK and ESC key and closing the pygame window. 
 
     There are various reasons for calling this:
     
@@ -981,8 +975,7 @@ def UPDATE():
             BYE()
         elif event.type == KEYDOWN:
             u = event.unicode
-            #print(event)
-            if event.scancode == 69:
+            if event.scancode == 69 or event.scancode == 1: # PAUSE/BREAK and ESC
                 BYE()
             if u == "£": u="`" # character set malarkey
             if u and (ord(u) < 32 or ord(u) > 127): u=""
@@ -1010,7 +1003,6 @@ def BEEP(duration, pitch):
     cycles = 44100 / freq
     clen = int(cycles / 2)
     snd = pygame.sndarray.make_sound(np.concatenate([np.zeros(clen,dtype=np.uint8),np.ones(clen,dtype=np.uint8)*255]))
-    print(cycles)
     snd.play(-1)
     pygame.time.wait(int(duration*1000))    
     snd.stop()
@@ -1029,14 +1021,14 @@ def PAUSE(frames):
 def AUTOUPDATE():
     """Enable automatic updating, allowing the effects of all text and graphics operations
     to be seen immediately. Note that this is the default, and so it is only useful
-    to call this if you have previously called MANUALUPDATE."""
+    to call this if you have previously called ``MANUALUPDATE``."""
     global autoupdate
     autoupdate = True
     
 def MANUALUPDATE():
     """Disable automatic updating - all text and graphics operations will only take effect when
-    UPDATE is called. This is useful for speed or smooth animation. To re-enable automatic updating
-    call AUTOUPDATE."""
+    ``UPDATE`` is called. This is useful for speed or smooth animation. To re-enable automatic updating
+    call ``AUTOUPDATE``."""
     global autoupdate
     autoupdate = False
 
@@ -1080,7 +1072,7 @@ def UDG(charno, values):
     
 def GETCHARDEF(charno):
     """
-    Fetches the definition of a character, as a tuple of 8 integers. See UDG for more details.
+    Fetches the definition of a character, as a tuple of 8 integers. See ``UDG`` for more details.
     
     Args:
     
@@ -1090,7 +1082,7 @@ def GETCHARDEF(charno):
     
 def RESETCHARS():
     """
-    Resets the character set to its original state. Undoes the effects of UDG.
+    Resets the character set to its original state. Undoes the effects of ``UDG``.
     """
     for i in range(256):
         charset[i] = defcharset[i-32] if i>32 and i-32<len(defcharset) else (0,0,0,0,0,0,0,0)
@@ -1103,7 +1095,7 @@ def GETMEMORY():
     the pixels starting at 0x4000 and the attributes starting at 0x5800, ending at 0x5aff
     
     This gets the actual array that specgfx works with - changing values in this array (between
-    0x4000 and 0x5aff) will change the screen once you call UPDATE.
+    0x4000 and 0x5aff) will change the screen once you call ``UPDATE``.
     """
     return memory
 
@@ -1113,18 +1105,18 @@ def PEEK(address):
     
     Args:
     
-    - address - integer, from 0 to 0x7fff, but only values from 0x4000 to 0x5800 are of interest.
+    - address - integer, from 0 to 0x7fff, but only values from 0x4000 to 0x5aff are of interest.
     """
     return memory[address]
     
 def POKE(address, value):
     """
     Writes a byte to the screen memory, at the given address. Writing between 0x4000 and 0x5aff will
-    change the screen once you call UPDATE.
+    change the screen once you call ``UPDATE``.
     
     Args:
     
-    - address - integer, from 0 to 0x7fff, but only values from 0x4000 to 0x5800 are of interest.
+    - address - integer, from 0 to 0x7fff, but only values from 0x4000 to 0x5aff are of interest.
     - value - integer - the byte to write.
     """
     memory[address] = value
