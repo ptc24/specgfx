@@ -28,9 +28,9 @@ A "hello world" example::
     from specgfx import *
     INIT()
     PRINT("Hello world!")
-	PRINT("Press any key to end")
-	GETKEY()
-	BYE()
+    PRINT("Press any key to end")
+    GETKEY()
+    BYE()
 
 specgfx is designed to be imported with ``from specgfx import *``. All of the commands are in upper-case, like in most
 8-bit BASICs.
@@ -72,15 +72,15 @@ but you do not need to use them directly. Instead, functions - ``AT``, ``TAB``, 
 number. Note that this may not be the way around that you expect - it does follow how ZX Spectrum BASIC works. ``TAB`` has
 one argument - the column you wish to go to. An example::
 
-	PRINT(AT(12,16),"Middle of the screen")
-	PRINT(AT(0,0),"Top left")
-	PRINT(AT(1,1),"Diagonal of stars",AT(2,2),"*",AT(3,3),"*",AT(4,4),"*",AT(5,5),"*")
-	PRINT(AT(14,0),"Tab Test",TAB(16),"On the same line",TAB(0),"On the next line")
-	
+    PRINT(AT(12,16),"Middle of the screen")
+    PRINT(AT(0,0),"Top left")
+    PRINT(AT(1,1),"Diagonal of stars",AT(2,2),"*",AT(3,3),"*",AT(4,4),"*",AT(5,5),"*")
+    PRINT(AT(14,0),"Tab Test",TAB(16),"On the same line",TAB(0),"On the next line")
+    
 Note that the results of ``AT`` and ``TAB`` are strings, and can be manipulated like other strings. Example::
-	
-	a = AT(2,2) + "*" + AT(3,3) + "*" + AT(4,4) + "*" + AT(5,5) + "*"
-	PRINT(a)
+    
+    a = AT(2,2) + "*" + AT(3,3) + "*" + AT(4,4) + "*" + AT(5,5) + "*"
+    PRINT(a)
 
 ``INK`` and ``PAPER`` control colour. Each character sits in an 8x8 pixel "character cell", and each character cell has an
 "attribute", that controls the ink colour of the cell, the paper colour of the cell, and whether the colours there are "bright"
@@ -88,35 +88,35 @@ and "flashing". There are eight colour values, as on the ZX Spectrum: 0=Black 1=
 
 Example::
 
-	PRINT("Black text ",INK(2),"then red text ",PAPER(1),"on blue.")
-	
+    PRINT("Black text ",INK(2),"then red text ",PAPER(1),"on blue.")
+    
 Note that any changes made using this are temporary - the next call to ``PRINT`` will not use those options. Example::
 
-	PRINT("Black text ",INK(2),"then red text ",PAPER(1),"on blue.")
-	PRINT("Back to black")
-	
+    PRINT("Black text ",INK(2),"then red text ",PAPER(1),"on blue.")
+    PRINT("Back to black")
+    
 However, these changes can be made permanent, using the ``set`` keyword for ``PRINT``. Example::
 
-	PRINT("Black text ",INK(2),"then red text ",PAPER(1),"on blue.", set=True)
-	PRINT("Still red on blue")
-	PRINT(INK(0),PAPER(7),"Back to black on white", set=True)
-	
+    PRINT("Black text ",INK(2),"then red text ",PAPER(1),"on blue.", set=True)
+    PRINT("Still red on blue")
+    PRINT(INK(0),PAPER(7),"Back to black on white", set=True)
+    
 If you just want to set the paper and ink colour (or the other options below), then you can use ``SET`` instead of
 ``PRINT``. It works just like ``PRINT``, except it uses the arguments ``end=""`` and ``set=True``. Example::
 
-	SET(INK(2),PAPER(1))
-	PRINT("Red on blue.")
+    SET(INK(2),PAPER(1))
+    PRINT("Red on blue.")
 
 As well as ``INK`` and ``PAPER`` there are ``BRIGHT`` and ``FLASH``. These take values from 0-1 rather than 0-7,
 but otherwise work in the same way. 0 is off, 1 is on.
-	
+    
 There is also ``OVER`` and ``INVERSE`` - again, these take values 0-1. ``OVER(1)`` writes with XOR - for every pixel
 it is going to draw, it checks to see if there is a pixel there already, and if so, deletes that pixel rather than
 drawing one. ``INVERSE(1)`` writes in inverse video - within a character cell, it draws pixels only in the places where
 it would not normally draw pixels, and erases pixels in the places in would normally draw them. Example::
 
     PRINT(AT(0,0),"over and",AT(0,0),OVER(1),"over again we go")
-	PRINT(AT(1,0),INVERSE(1),"Inverse video")
+    PRINT(AT(1,0),INVERSE(1),"Inverse video")
 
 There are a couple of additional commands which are not strictly text commands, but are useful when working with text.
 ``CLS()`` clears the screen, and sends the cursor to the top left. ``BORDER`` sets the border. It has one argument - the
@@ -137,25 +137,25 @@ http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout has
 
 Example::
 
-	PRINT(AT(0,0),"Inks")
-	PRINT(AT(1,0),"01234567")
-	for i in range(8): SETATTR(i,1,INK=i)
-	PRINT(AT(2,0),"Papers")
-	PRINT(AT(3,0),"01234567")
-	for i in range(8): SETATTR(i,3,PAPER=i)
-	PRINT(AT(4,0),"Bright")
-	PRINT(AT(5,0),"01")
-	for i in range(2): SETATTR(i,5,BRIGHT=i)
-	PRINT(AT(6,0),"Flash")
-	PRINT(AT(7,0),"01")
-	for i in range(2): SETATTR(i,7,FLASH=i)
-	PRINT(AT(8,0),"Attrs")
-	PRINT(AT(9,0),"0123456789abcdef")
-	for i in range(16): SETATTR(i,9,i) # SETATTR(i,9,ATTR=i) also works
-	PRINT(AT(10,0),"Combo")
-	PRINT(AT(11,0),"0")
-	SETATTR(0,11,INK=4,PAPER=3,BRIGHT=1,FLASH=0)
-	PRINT(AT(12,0),"Attr at 0,0: ",ATTR(0,0)) # Should be ink 0 paper 7 bright 0 flash 0 - i.e. 56
+    PRINT(AT(0,0),"Inks")
+    PRINT(AT(1,0),"01234567")
+    for i in range(8): SETATTR(i,1,INK=i)
+    PRINT(AT(2,0),"Papers")
+    PRINT(AT(3,0),"01234567")
+    for i in range(8): SETATTR(i,3,PAPER=i)
+    PRINT(AT(4,0),"Bright")
+    PRINT(AT(5,0),"01")
+    for i in range(2): SETATTR(i,5,BRIGHT=i)
+    PRINT(AT(6,0),"Flash")
+    PRINT(AT(7,0),"01")
+    for i in range(2): SETATTR(i,7,FLASH=i)
+    PRINT(AT(8,0),"Attrs")
+    PRINT(AT(9,0),"0123456789abcdef")
+    for i in range(16): SETATTR(i,9,i) # SETATTR(i,9,ATTR=i) also works
+    PRINT(AT(10,0),"Combo")
+    PRINT(AT(11,0),"0")
+    SETATTR(0,11,INK=4,PAPER=3,BRIGHT=1,FLASH=0)
+    PRINT(AT(12,0),"Attr at 0,0: ",ATTR(0,0)) # Should be ink 0 paper 7 bright 0 flash 0 - i.e. 56
 
 
 The Keyboard
@@ -168,15 +168,15 @@ to type in text.
 
 Example::
 
-	PRINT("Press a key to continue")
-	key = GETKEY()
-	PRINT("You pressed: ", key)
-	name = INPUT("What is your name")
-	PRINT("Hello, ", name, "!")
-	while True:
-		key = INKEYS()
-		if key == "": key = " "
-		PRINT(AT(12,16), key)
+    PRINT("Press a key to continue")
+    key = GETKEY()
+    PRINT("You pressed: ", key)
+    name = INPUT("What is your name")
+    PRINT("Hello, ", name, "!")
+    while True:
+        key = INKEYS()
+        if key == "": key = " "
+        PRINT(AT(12,16), key)
 
 Pixel Graphics
 --------------
@@ -190,15 +190,15 @@ the graphics cursor without drawing to the screen, use ``MOVE``.
 ``DRAW`` and ``DRAWTO`` draw lines - straight or curved - from the graphics cursor. ``DRAW`` draws relative to the graphics
 cursor, ``DRAWTO`` draws to the specified point. An example should illuminate::
 
-	PLOT(10,10)
-	for i in range(10):
-		DRAW(0,10) # draw along 10 pixels
-		DRAW(10,0) # draw down 10 pixels
-	PLOT(100,10)
-	for i in range(10):
-		DRAWTO(100+10*(i+1),10+10*i))
-		DRAWTO(100+10*(i+1),10+10*(i+1))
-		
+    PLOT(10,10)
+    for i in range(10):
+        DRAW(0,10) # draw along 10 pixels
+        DRAW(10,0) # draw down 10 pixels
+    PLOT(100,10)
+    for i in range(10):
+        DRAWTO(100+10*(i+1),10+10*i))
+        DRAWTO(100+10*(i+1),10+10*(i+1))
+        
 This should draw two staircases - in this case it is simpler to use ``DRAW`` but sometimes ``DRAWTO`` is simpler.
 
 You can draw arcs with ``DRAW`` and ``DRAWTO``, with the third argument being the angle the arc goes through. This
@@ -207,21 +207,21 @@ will try to draw a very large circle that will mostly go off screen. By default 
 the right, make the third argument negative. To draw a full circle, use ``CIRCLE``. It has three arguments - the x and y
 of the centre, and the radius. An example::
 
-	MOVE(10,10)
-	for i in range(8):
-		DRAW(25,15,i*3.14159/4) # Draw increasingly curvy arcs, from a straight line to seven-eighths of a circle
-	CIRCLE(200,50,40) # A full circle elsewhere, for comparison.
+    MOVE(10,10)
+    for i in range(8):
+        DRAW(25,15,i*3.14159/4) # Draw increasingly curvy arcs, from a straight line to seven-eighths of a circle
+    CIRCLE(200,50,40) # A full circle elsewhere, for comparison.
 
 The commands ``PLOT``, ``DRAW``, ``DRAWTO`` and ``CIRCLE`` can draw using various options - an ink colour, and 
 "inverse" and "over" settings. These may be set permanently using the ``SET`` command, as for text, or
 temporarily using the additional arguments INK, OVER and INVERSE. An example::
 
-	PLOT(10,10) # starting point
-	DRAW(50,0) # draw in default colour - black
-	SET(INK(2)) # change to red
-	DRAW(10,20) # draw in red
-	DRAW(-10,20,INK=4) # draw temporarily in green
-	DRAW(10,20) # now we're back to red
+    PLOT(10,10) # starting point
+    DRAW(50,0) # draw in default colour - black
+    SET(INK(2)) # change to red
+    DRAW(10,20) # draw in red
+    DRAW(-10,20,INK=4) # draw temporarily in green
+    DRAW(10,20) # now we're back to red
 
 Note that the colours don't go neatly where you put them. This is due to the "character cell" effect - for every point
 drawn, the entire character cell containing that point has its ink colour set. This is just like how a ZX Spectrum works!
@@ -230,22 +230,22 @@ The OVER and INVERSE options are useful for erasing pixels. Plotting and drawing
 Plotting and drawing with OVER on draws pixels where the screen originally had no pixel, but erases pixels where they
 are already there - i.e. it XORs with what's already there. The following snippet should show the differences::
 
-	MOVE(10,50) # starting point
-	DRAW(40,0) # A line for reference
-	MOVE(20,40)
-	DRAW(0,20) # Draws over the existing line
-	MOVE(30,40)
-	DRAW(0,20,OVER=1) # Erases the crossing point, but draws the rest of the line
-	MOVE(40,40)
-	DRAW(0,20,INVERSE=1) # Just erases the crossing point
+    MOVE(10,50) # starting point
+    DRAW(40,0) # A line for reference
+    MOVE(20,40)
+    DRAW(0,20) # Draws over the existing line
+    MOVE(30,40)
+    DRAW(0,20,OVER=1) # Erases the crossing point, but draws the rest of the line
+    MOVE(40,40)
+    DRAW(0,20,INVERSE=1) # Just erases the crossing point
 
 There is also the POINT command, which looks at the pixel at a given location, returning 1 if the pixel is set, and 0 if
 it is unset. Example::
 
-	CLS()
-	PLOT(100,100)
-	PRINT(POINT(100,100)) # should print 1
-	PRINT(POINT(100,101)) # should print 0
+    CLS()
+    PLOT(100,100)
+    PRINT(POINT(100,100)) # should print 1
+    PRINT(POINT(100,101)) # should print 0
 
 Updating
 --------
@@ -262,36 +262,36 @@ graphics command. This is simple but slow. Manual updating mode can be accessed 
 update will only happen when ``UPDATE()`` is called. You can go back to automatic updating by calling ``AUTOUPDATE()``.
 The following example should illuminate::
 
-	CLS()
-	
-	# Auto-updating, the slowest
-	MOVE(0,0)
-	for i in range(32):
-		DRAW(0,4)
-		DRAW(4,0)
-		DRAW(0,-4)
-		DRAW(4,0)
+    CLS()
+    
+    # Auto-updating, the slowest
+    MOVE(0,0)
+    for i in range(32):
+        DRAW(0,4)
+        DRAW(4,0)
+        DRAW(0,-4)
+        DRAW(4,0)
 
-	MANUALUPDATE()
-	# This updates every fourth DRAW, and so is four times as fast
-	MOVE(0,50)
-	for i in range(32):
-		DRAW(0,4)
-		DRAW(4,0)
-		DRAW(0,-4)
-		DRAW(4,0)
-		UPDATE()
+    MANUALUPDATE()
+    # This updates every fourth DRAW, and so is four times as fast
+    MOVE(0,50)
+    for i in range(32):
+        DRAW(0,4)
+        DRAW(4,0)
+        DRAW(0,-4)
+        DRAW(4,0)
+        UPDATE()
 
-	# This only updates when the whole thing is drawn, and so is the fastest
-	MOVE(0,100)
-	for i in range(32):
-		DRAW(0,4)
-		DRAW(4,0)
-		DRAW(0,-4)
-		DRAW(4,0)
-	UPDATE()
+    # This only updates when the whole thing is drawn, and so is the fastest
+    MOVE(0,100)
+    for i in range(32):
+        DRAW(0,4)
+        DRAW(4,0)
+        DRAW(0,-4)
+        DRAW(4,0)
+    UPDATE()
 
-	AUTOUPDATE()
+    AUTOUPDATE()
 
 There are other reasons to call ``UPDATE()``. If you're doing hard computation, which takes a lot of time, calling
 ``UPDATE()`` every now and again will keep things moving, and avoid the impression that the system has hung. If you're
@@ -312,27 +312,27 @@ argument is a tuple of 8-bit integers, with each bit representing a pixel.
 
 Example::
 
-	# Make and print a UDG
-	UDG(0x90, (0b00000001,
-			   0b00000011,
-			   0b00000111,
-			   0b00001111,
-			   0b00011111,
-			   0b00111111,
-			   0b01111111,
-			   0b11111111))
-	PRINT("\x90")
-	# Examine the letter 'a'
-	d = GETCHARDEF(ord('a'))
-	for i in d:
-		PRINT(format(i, "08b"))
-	# Redefine characters to be upside down - i.e. with the first row last etc.
-	for i in range(32,128):
-		UDG(i, tuple(reversed(GETCHARDEF(i))))
-	PRINT("Upside down!")
-	# ...and put everything back.
-	RESETCHARS()
-	PRINT("Right way up!")
+    # Make and print a UDG
+    UDG(0x90, (0b00000001,
+               0b00000011,
+               0b00000111,
+               0b00001111,
+               0b00011111,
+               0b00111111,
+               0b01111111,
+               0b11111111))
+    PRINT("\x90")
+    # Examine the letter 'a'
+    d = GETCHARDEF(ord('a'))
+    for i in d:
+        PRINT(format(i, "08b"))
+    # Redefine characters to be upside down - i.e. with the first row last etc.
+    for i in range(32,128):
+        UDG(i, tuple(reversed(GETCHARDEF(i))))
+    PRINT("Upside down!")
+    # ...and put everything back.
+    RESETCHARS()
+    PRINT("Right way up!")
 
 Sound
 -----
@@ -341,14 +341,14 @@ The one sound command is ``BEEP()``, and it is currently very crude. It takes tw
 and a pitch - in semitones above middle C (this may be negative for pitches below middle C). The duration and pitch are
 very approximate, don't count on anything musical. The following example attempts to play a scale::
 
-	BEEP(0.25,0)
-	BEEP(0.25,2)
-	BEEP(0.25,4)
-	BEEP(0.25,5)
-	BEEP(0.25,7)
-	BEEP(0.25,9)
-	BEEP(0.25,11)
-	BEEP(0.25,12)
+    BEEP(0.25,0)
+    BEEP(0.25,2)
+    BEEP(0.25,4)
+    BEEP(0.25,5)
+    BEEP(0.25,7)
+    BEEP(0.25,9)
+    BEEP(0.25,11)
+    BEEP(0.25,12)
 
 
 Internals
@@ -368,13 +368,13 @@ This gets the actual array that specgfx works with - changing values in this arr
 
 An example::
 
-	mem = GETMEMORY()
-	# Write random stuff to the whole of screen memory
-	for i in range(0x4000,0x5aff):
-		mem[i] = random.randint(0,255)
-		UPDATE()
+    mem = GETMEMORY()
+    # Write random stuff to the whole of screen memory
+    for i in range(0x4000,0x5aff):
+        mem[i] = random.randint(0,255)
+        UPDATE()
 
-	# Just the attributes - update odd-numbered cells to have the same attribute as the cells next to them.
-	for i in range(0x5800,0x5aff,2):
-		POKE(i+1,PEEK(i))
-		UPDATE()
+    # Just the attributes - update odd-numbered cells to have the same attribute as the cells next to them.
+    for i in range(0x5800,0x5aff,2):
+        POKE(i+1,PEEK(i))
+        UPDATE()
