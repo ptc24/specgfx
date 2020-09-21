@@ -59,8 +59,8 @@ Text
 First, it is necessary to mention the character set. It is mostly 7-bit ASCII, with control characters below
 character 32 (some standard,
 some special to specgfx, reflecting the control characters on the ZX Spectrum). The pound sign is assigned to code point
-96 - i.e. what is normally a backtick (`````). ASCII 127 (``"\\x7f"``) is a copyright sign.
-ASCII 128-143 (i.e. ``"\\x80"`` to ``"\\x8f"`` - or ``chr(128)`` to ``chr(143)``) are block 
+96 - i.e. what is normally a backtick (`````). ASCII 127 (``"\x7f"``) is a copyright sign.
+ASCII 128-143 (i.e. ``"\x80"`` to ``"\x8f"`` - or ``chr(128)`` to ``chr(143)``) are block 
 drawing characters. The characters from 144 to 255 are blank, but can be redefined using the
 ``UDG`` command (see later), as can all of the other characters.
 
@@ -122,6 +122,21 @@ There are a couple of additional commands which are not strictly text commands, 
 ``CLS()`` clears the screen, and sends the cursor to the top left. ``BORDER`` sets the border. It has one argument - the
 border colour - from 0-7. For example ``BORDER(1)`` sets the border to blue. Note that there is no way to make the border
 bright or flashing, just as on the ZX Spectrum.
+
+If printed text goes off the bottom of the screen, the screen will scroll up by one character. You can also scroll things
+up deliberately by calling ``SCROLLUP()``. Example::
+
+	PRINT("This will disappear")
+	for i in range(23):
+		PRINT("Push to the bottom")
+	PRINT("Press any key")
+	GETKEY()
+	PRINT("This will disappear")
+	PRINT("This will remain")
+	for i in range(22): SCROLLUP()
+	PAUSE(10)
+	PRINT("Press any key")
+	GETKEY()
 
 Advanced text commands
 ----------------------
